@@ -205,3 +205,13 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+/.idea/inspectionProfiles/profiles_settings.xml
+/.idea/inspectionProfiles/Project_Default.xml
+/.idea/.gitignore
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/pixel-perfect-renderer.iml
+/.idea/pixel_perfect_renderer.iml
+/.idea/vcs.xml
+/.vscode/launch.json
+/.vscode/tasks.json
