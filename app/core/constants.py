@@ -1,0 +1,48 @@
+PROJECT_TITLE = "Pixel Perfect Renderer"
+PROJECT_VERSION = "1.0.0"
+# --- API General ---
+API_KEY_HEADER = "X-API-Key"
+API_RATE_LIMIT = "10/minute"
+API_MAX_REQUEST_SIZE = 30 * 1024 * 1024  # 30MB
+HEALTH_MSG = "Service is healthy."
+WELCOME_MSG = "Welcome to the Pixel Perfect Renderer API!"
+
+# --- HTTP Status Messages ---
+STATUS_403_FORBIDDEN_DETAIL = "Could not validate credentials"
+STATUS_400_EMPTY_FILE = "No file content provided. Please upload a non-empty file."
+STATUS_413_PAYLOAD_TOO_LARGE_DETAIL = "File size is too large. The limit is {max_size} bytes."
+STATUS_422_VALIDATION_ERROR_DETAIL = "Field required"
+STATUS_500_ANALYSIS_ERROR_DETAIL = "An unexpected error occurred during document analysis: {e}"
+STATUS_500_RENDERING_ERROR_DETAIL = "An unexpected error occurred during rendering: {e}"
+
+AZURE_401_AUTH_ERROR_DETAIL = "Azure authentication failed. Check your Document Intelligence API key and endpoint."
+AZURE_GENERAL_ERROR_DETAIL = "An error occurred with the Azure Document Intelligence service: {e}"
+
+# --- Endpoint Messages ---
+ANALYZE_SUCCESS_MSG = "Document analysis was successful."
+RENDER_SUCCESS_MSG = "Successfully rendered JSON to HTML."
+
+# --- Logging ---
+LOG_FORMAT = "{time} {level} {extra[request_id]} {message}"
+
+# --- Document Rendering ---
+DEFAULT_FONT_STACK = "Arial, sans-serif"
+DEFAULT_RENDER_MODE = "word"
+DEFAULT_DPI = 96
+DEFAULT_PARAGRAPH_ROLE = "paragraph"
+HTML_VISUALIZATION_CSS = """
+body {{ font-family: {font_style}; background: #f0f0f0; }}
+.page {{ margin: 20px auto; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; overflow: hidden; background: white; }}
+.table-container table {{ border-collapse: collapse; width: 100%; }}
+.table-container th, .table-container td {{ border: 1px solid black; padding: 4px; text-align: center; font-size: 10px; position: relative; overflow: hidden; }}
+"""
+SCALE_FACTOR = 1000
+
+DEFAULT_PAGE_WIDTH = 8.5
+DEFAULT_PAGE_HEIGHT = 11
+DEFAULT_PAGE_ANGLE = 0
+
+# --- Testing ---
+TEST_INVALID_API_KEY = "this-is-a-wrong-key"
+TEST_DUMMY_FILE_CONTENT = b"This is a test document."
+TEST_PDF_CONTENT_TYPE = "application/pdf"
