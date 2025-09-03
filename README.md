@@ -88,7 +88,7 @@ Document Intelligence resource.
 
     ```ini
     # .env
-    API_KEY="your-secret-api-key" # Generate a secure key, e.g., using uuid.uuid4()
+    API_KEY="your-secret-api-key" # Generate a secure key
     DOC_INTELLIGENCE_ENDPOINT="https://your-azure-endpoint.cognitiveservices.azure.com/"
     DOC_INTELLIGENCE_KEY="your-azure-document-intelligence-key"
     ```
@@ -138,7 +138,7 @@ Here you'll find the interactive Swagger UI to test all endpoints.
 
 ## 6. API Endpoints Guide
 
-### `/api/health`
+### `/health`
 
 - **Method:** GET\
 
@@ -154,7 +154,7 @@ Here you'll find the interactive Swagger UI to test all endpoints.
   }
   ```
 
-### `/api/analyze-document`
+### `/analyze-document`
 
 - **Method:** POST\
 - **Description:** Analyzes a document and returns its layout as
@@ -162,12 +162,12 @@ Here you'll find the interactive Swagger UI to test all endpoints.
 - **Headers:**\
   `X-API-Key: Your secret API key.`\
 - **Body:** `multipart/form-data` with field:
-  - `file`: Document to analyze (PDF, JPEG, etc).
+  - `file`: Document to analyze (PDF, JPEG, PNG, JPG, etc).
 
 **Curl Example:**
 
 ```bash
-curl -X POST "http://localhost:8000/api/analyze-document"      -H "X-API-Key: your-secret-api-key"      -F "file=@/path/to/your/document.pdf"
+curl -X POST "http://localhost:8000/analyze-document"      -H "X-API-Key: your-secret-api-key"      -F "file=@/path/to/your/document.pdf"
 ```
 
 **Response (200 OK):**
@@ -187,7 +187,7 @@ curl -X POST "http://localhost:8000/api/analyze-document"      -H "X-API-Key: yo
 }
 ```
 
-### `/api/render-json`
+### `/render-json`
 
 - **Method:** POST\
 - **Description:** Renders the layout JSON into HTML.\
@@ -214,7 +214,7 @@ curl -X POST "http://localhost:8000/api/analyze-document"      -H "X-API-Key: yo
 **Curl Example:**
 
 ```bash
-curl -X POST "http://localhost:8000/api/render-json"      -H "X-API-Key: your-secret-api-key"      -H "Content-Type: application/json"      -d @/path/to/analysis_result.json
+curl -X POST "http://localhost:8000/render-json"      -H "X-API-Key: your-secret-api-key"      -H "Content-Type: application/json"      -d @/path/to/analysis_result.json
 ```
 
 **Response (200 OK):**

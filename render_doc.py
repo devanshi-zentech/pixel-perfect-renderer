@@ -5,10 +5,10 @@ Example Usage
 This CLI tool converts Azure Document Intelligence JSON into HTML.
 
 # Example 1: Pixel-perfect rendering at default 96 DPI, using Arial
-python render.py --input sample.json --out output_dir --mode word --dpi 96 --font "Arial, sans-serif"
+python render_doc.py --input <path-to-json> --out output_html_files --mode word --dpi 96 --font "Arial, sans-serif"
 
 # Example 2: Semantic rendering (lines-based), higher resolution
-python render.py --input sample.json --out output_dir --mode lines --dpi 150 --font "Times New Roman, serif"
+python render_doc.py --input <path-to-json> --out output_html_files --mode lines --dpi 150 --font "Times New Roman, serif"
 
 Arguments
 ---------

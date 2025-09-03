@@ -24,7 +24,8 @@ from app.utils.file_validator import FileValidator
 
 class RendererAPI:
     def __init__(self, service: DocumentRenderer):
-        self.router = APIRouter()
+        # Add a tag to group related endpoints in the documentation
+        self.router = APIRouter(tags=["Document Processing"])
         self.service = service
         self.api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
         self.file_validator = FileValidator()
@@ -41,13 +42,26 @@ class RendererAPI:
     def _add_routes(self):
         """Attach all endpoints to router"""
 
-        @self.router.post("/analyze-document", response_model=APIResponse[AzureJson])
+        @self.router.post(
+            "/analyze-document",
+            response_model=APIResponse[AzureJson],
+            summary="Step 1: Analyze a Document",
+            description=(
+                "Upload a file (e.g., PDF, PNG, JPG, JPEG) to be analyzed by the Document Intelligence engine. "
+                "The response contains a structured `azure_json` object representing the document's content and layout. "
+                "**The `data` object from this response should be used as the `azure_json` value in the 'Render JSON' request.**"
+            )
+        )
         @limiter.limit(settings.rate_limit)
         async def analyze_document_endpoint(
             request: Request,
-            file: UploadFile = File(...),
+            file: UploadFile = File(..., description="The document file to be analyzed."),
             api_key: str = Depends(self.get_api_key),
         ):
+            """
+            SAMPLE INPUT FOR ENDPOINT:
+            Upload a file (PDF, PNG, JPG, JPEG) as 'file' form-data.
+            """
             try:
                 file_content = await self.file_validator.validate_upload(file)
                 # Call the service for document analysis
@@ -58,20 +72,44 @@ class RendererAPI:
                     "data": AzureJson(azure_json=analysis_result),
                 }
             except HTTPException:
-                raise  
+                raise
             except Exception as e:
                 raise HTTPException(
                     status_code=500,
                     detail=constants.STATUS_500_ANALYSIS_ERROR_DETAIL.format(e=str(e)),
                 )
 
-        @self.router.post("/render-json", response_model=APIResponse[RenderResponse])
+        @self.router.post(
+            "/render-json",
+            response_model=APIResponse[RenderResponse],
+            summary="Step 2: Render JSON to HTML",
+            description=(
+                """
+                Takes the `azure_json` object from the 'Analyze Document' endpoint, along with rendering options and
+                converts it into styled HTML pages.
+                This allows for a two-step workflow where analysis and rendering are separate operations."""
+            )
+        )
         @limiter.limit(settings.rate_limit)
         async def render_json_endpoint(
             request: Request,
-            payload: RenderRequest = Body(...),
+            payload: RenderRequest = Body(..., description="The JSON payload containing the analysis result and rendering options."),
             api_key: str = Depends(self.get_api_key),
         ):
+            """
+            SAMPLE INPUT FOR ENDPOINTS:
+            {
+            "azure_json": {
+                "pages": [
+                    { "number": 1, "content": "Sample text", "layout": {...} }
+                ]
+                },
+                "options": {
+                    "mode": "words",
+                    "font_stack": "Arial, Helvetica, sans-serif"
+                    "dpi": 96
+                }
+            }"""
             try:
                 html_pages = self.service.render_html(payload.azure_json, payload.options)
                 render_data = RenderResponse(page_count=len(html_pages), html_pages=html_pages)
@@ -88,7 +126,12 @@ class RendererAPI:
                     detail=constants.STATUS_500_RENDERING_ERROR_DETAIL.format(e=str(e)),
                 )
 
-        @self.router.get("/health", response_model=APIResponse)
+        @self.router.get(
+            "/health",
+            response_model=APIResponse,
+            summary="Health Check",
+            description="A simple endpoint to verify that the API service is running and healthy. No authentication is required."
+        )
         async def health_check():
             return {
                 "status": True,
