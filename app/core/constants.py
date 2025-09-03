@@ -42,6 +42,23 @@ DEFAULT_PAGE_WIDTH = 8.5
 DEFAULT_PAGE_HEIGHT = 11
 DEFAULT_PAGE_ANGLE = 0
 
+
+CONTAINER_STYLE =(
+    '<div class="page" style="width:{page_width_scaled:.2f}px; '
+    'height:{page_height_scaled:.2f}px; transform:rotate({page_angle}deg);">'
+    '{content}</div>')
+
+RENDER_WORD_STYLE = (
+        'position: absolute; left: {left:.2f}px; top: {top:.2f}px; '
+        'transform-origin: top left; transform: rotate({angle_deg:.2f}deg); '
+        'font-size: {font_size:.2f}px; line-height: {word_height:.2f}px; '
+        'white-space: nowrap; color: rgba(0,0,0,0.9);'
+    )
+
+RENDER_TABLE_STYLE = '<div class="table-container" style="position: absolute; left: {left:.2f}px; top: {top:.2f}px; width: {width:.2f}px;"><table border="1">'
+
+CELL_STYLE = 'style="width:{cell_width:.2f}px; height:{cell_height:.2f}px;"'
+
 # --- Testing ---
 TEST_INVALID_API_KEY = "this-is-a-wrong-key"
 TEST_DUMMY_FILE_CONTENT = b"This is a test document."

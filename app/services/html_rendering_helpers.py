@@ -35,12 +35,7 @@ def render_word(word: Dict[str, Any], scale: float) -> str:
     # Sanitize content to prevent HTML injection.
     sanitized_content = str(word.get("content", "")).replace("<", "&lt;").replace(">", "&gt;")
 
-    style = (
-        f'position: absolute; left: {left:.2f}px; top: {top:.2f}px; '
-        f'transform-origin: top left; transform: rotate({angle_deg:.2f}deg); '
-        f'font-size: {font_size:.2f}px; line-height: {word_height:.2f}px; '
-        f'white-space: nowrap; color: rgba(0,0,0,0.9);'
-    )
+    style = constants.RENDER_WORD_STYLE.format(left=left, top=top, word_height=word_height, font_size=font_size , angle_deg=angle_deg)
 
     return f'<span class="word" style="{style}">{sanitized_content}</span>'
 
@@ -72,7 +67,7 @@ def render_table_with_words(
 
     # Start building the table HTML.
     table_html_parts = [
-        f'<div class="table-container" style="position: absolute; left: {left:.2f}px; top: {top:.2f}px; width: {width:.2f}px;"><table border="1">'
+        constants.RENDER_TABLE_STYLE.format(left=left,top=top,width=width)
     ]
 
     # Create a grid to correctly handle cells with row/column spans.
@@ -102,17 +97,17 @@ def render_table_with_words(
             cell_y = cell_poly[1::2]
             cell_width = (max(cell_x) - min(cell_x)) * scale
             cell_height = (max(cell_y) - min(cell_y)) * scale
-            cell_style = f'style="width:{cell_width:.2f}px; height:{cell_height:.2f}px;"'
+            cell_style = constants.CELL_STYLE.format(cell_width=cell_width, cell_height=cell_height)
 
         # Place the cell in the grid.
         grid[row_idx][col_idx] = f'<{tag} {cell_style} rowspan="{row_span}" colspan="{col_span}">{cell_content}</{tag}>'
 
         # Mark all grid cells covered by this cell's span as "occupied".
-        for r in range(row_span):
-            for c in range(col_span):
-                if r == 0 and c == 0: continue
-                if (row_idx + r < len(grid)) and (col_idx + c < len(grid[0])):
-                    grid[row_idx + r][col_idx + c] = "occupied"
+        for  row_offset in range(row_span):
+            for column_offset in range(col_span):
+                if  row_offset == 0 and  column_offset == 0: continue
+                if (row_idx +  row_offset < len(grid)) and (col_idx +  column_offset < len(grid[0])):
+                    grid[row_idx +  row_offset][col_idx +  column_offset] = "occupied"
     
     # Convert the grid into final HTML table rows.
     for row in grid:

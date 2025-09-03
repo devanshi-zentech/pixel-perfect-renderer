@@ -121,6 +121,7 @@ def main():
     )
     
     html_pages = converter.to_html_pages(azure_json_data, render_options)
+    print(html_pages)
 
     if not html_pages:
         print("Warning: No pages were rendered. The input JSON might be empty or invalid.")
