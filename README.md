@@ -98,11 +98,11 @@ pip install -r requirements.txt
 
 ```ini
 # .env
-API_KEY="your-secret-api-key" # Generate a secure key
+API_KEY="your-secret-api-key" # Generate a secure key, Use this key in API Headers as "X-API-KEY"
 DOC_INTELLIGENCE_ENDPOINT="https://your-azure-endpoint.cognitiveservices.azure.com/"
 DOC_INTELLIGENCE_KEY="your-azure-document-intelligence-key"
-RATE_LIMIT="your-rate-limit-per-minute"
-MAX_REQUEST_SIZE="your-max-request-size-in-bytes"
+RATE_LIMIT="your-rate-limit-per-minute" # Format Ex: "10/minute", "15/minute"
+MAX_REQUEST_SIZE="your-max-request-size-in-bytes" #  Format Ex: "31457280" in bytes
 ```
 
 ### 4.2. Docker Deployment
@@ -275,12 +275,12 @@ The script takes an input JSON file and an output directory as arguments.
 
 **Windows**
 ```powershell
-python render_doc.py --input "<path_to_azure.json>" --out output_html_files --dpi 96 --font "Arial, sans-serif"
+python -m app.services.render_doc --input "<path-to-json>" --out output_html_files --mode words --dpi 96 --font "Arial, sans-serif"
 ```
 
 **Linux / MacOS**
 ```bash
-python3 render_doc.py --input "<path_to_azure.json>" --out output_html_files --dpi 96 --font "Arial, sans-serif"
+python -m app.services.render_doc --input "<path-to-json>" --out output_html_files --mode words --dpi 96 --font "Arial, sans-serif"
 ```
 
 This command will read the specified JSON file and save the rendered HTML pages (e.g., page_1.html, page_2.html) inside the `./output_html_files` directory.
