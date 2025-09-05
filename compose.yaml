@@ -1,0 +1,10 @@
+services:
+  pixelperfectrenderer20250901:
+    image: pixelperfectrenderer20250901
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
