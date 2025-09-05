@@ -8,6 +8,7 @@ from fastapi import (
     Security,
     UploadFile,
 )
+from fastapi.responses import RedirectResponse
 from fastapi.security.api_key import APIKeyHeader
 
 from app.core.config import settings
@@ -42,6 +43,9 @@ class RendererAPI:
     def _add_routes(self):
         """Attach all endpoints to router"""
 
+        @self.router.get("/", include_in_schema=False)
+        async def root():
+            return RedirectResponse(url="/health")
         @self.router.post(
             "/analyze-document",
             response_model=APIResponse[AzureJson],

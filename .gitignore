@@ -215,3 +215,5 @@ __marimo__/
 /.idea/vcs.xml
 /.vscode/launch.json
 /.vscode/tasks.json
+
+*.html

@@ -152,7 +152,7 @@ restarts the server when you change the code.
 ### Accessing the API Documentation
 
 Once the server is running, navigate to:
-👉 **http://localhost:8000/docs**
+**http://localhost:8000/docs**
 Here you'll find the interactive Swagger UI to test all endpoints.
 
 ---

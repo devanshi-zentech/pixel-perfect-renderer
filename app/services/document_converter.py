@@ -16,7 +16,7 @@ env = Environment(
     loader=FileSystemLoader(TEMPLATES_DIR),
     autoescape=select_autoescape(['html', 'xml'])
 )
-template = env.get_template("basic_html_page.html.j2")
+template = env.get_template("base_html_structure.html.j2")
 
 
 class DocumentConverter:

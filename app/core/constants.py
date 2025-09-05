@@ -63,7 +63,6 @@ RENDER_TABLE_WORD_STYLE =(
                     'font-size: {font_size_in_pixels:.2f}px; line-height: {word_height_in_pixels:.2f}px; white-space: nowrap;'
                 )
 
-# RENDER_TABLE_STYLE = '<div class="table-container" style="position: absolute; left: {left:.2f}px; top: {top:.2f}px; width: {width:.2f}px; height: {height:.2f}px;"><table border="1">'
 RENDER_TABLE_STYLE = '<div class="table-container" style="position: absolute; left: {left:.2f}px; top: {top:.2f}px; width: {width:.2f}px;"><table border="1">'
 
 CELL_STYLE = (
