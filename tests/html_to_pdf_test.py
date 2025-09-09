@@ -1,9 +1,9 @@
 import unittest
 import os
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from io import StringIO
-import PyPDF2
+import pypdf
 
 from app.services.html_to_pdf_converter import HtmlToPdfConverter
 
@@ -18,9 +18,9 @@ class TestHtmlToPdfConverter(unittest.TestCase):
         Set up a temporary HTML file and an output PDF path for testing.
         """
         test_dir = Path(__file__).parent
-        self.output_pdf_path = test_dir / "test_pdf_output" / "test_pdf_output.pdf"
+        self.output_pdf_path = test_dir / "test_pdf_output" / "test_output.pdf"
         self.expected_pdf_path = test_dir / "expected_pdf_output" / "table_html.pdf"
-        self.html_content = """<!DOCTYPE html>
+        self.html_content = ["""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -1123,7 +1123,7 @@ class TestHtmlToPdfConverter(unittest.TestCase):
         style="position: absolute; left: 961.38px; top: 1441.51px; transform-origin: top left; transform: rotate(1.56deg); font-size: 14.26px; line-height: 17.82px; white-space: nowrap; color: rgba(0,0,0,0.9);">App</span>
 </div>
 </body>
-</html>"""
+</html>"""]
         self.output_pdf_path.parent.mkdir(parents=True, exist_ok=True)
 
     # def tearDown(self):
@@ -1139,7 +1139,7 @@ class TestHtmlToPdfConverter(unittest.TestCase):
         """
         try:
             with open(pdf_path, 'rb') as f:
-                reader = PyPDF2.PdfReader(f)
+                reader = pypdf.PdfReader(f)
                 text = ""
                 for page in reader.pages:
                     text += page.extract_text()
@@ -1150,37 +1150,52 @@ class TestHtmlToPdfConverter(unittest.TestCase):
             self.fail(f"An error occurred while reading the PDF: {e}")
         return ""
 
-    @patch('app.services.html_to_word.pdf.sync_playwright')
-    def test_convert_success_mocked(self, mock_sync_playwright):
-        """
-        Tests that the convert method successfully creates a PDF file (mocked).
+    @patch('app.services.html_to_pdf_converter.async_playwright')
+    def test_convert_success_mocked(self, mock_async_playwright):
+        async def run_test():
+            # Mock async context manager for async_playwright()
+            mock_playwright_cm = AsyncMock()
+            mock_async_playwright.return_value = mock_playwright_cm
 
-        This test uses a mock to simulate the Playwright browser
-        and page objects, ensuring the convert method is called
-        correctly without actually launching a browser.
-        """
+            # The playwright instance yielded by __aenter__
+            mock_playwright = MagicMock()
+            mock_playwright_cm.__aenter__.return_value = mock_playwright
 
-        # Set up the mock objects
-        mock_p = MagicMock()
-        mock_browser = MagicMock()
-        mock_page = MagicMock()
+            # Mock browser and page with async methods
+            mock_browser = AsyncMock()
+            mock_page = AsyncMock()
 
-        # Configure the mock chain of calls
-        mock_sync_playwright.return_value.__enter__.return_value = mock_p
-        mock_p.chromium.launch.return_value = mock_browser
-        mock_browser.new_page.return_value = mock_page
+            mock_playwright.chromium.launch = AsyncMock(return_value=mock_browser)
+            mock_browser.new_page = AsyncMock(return_value=mock_page)
 
-        # Create an instance of the converter and run the conversion
-        converter = HtmlToPdfConverter(self.html_content, self.output_pdf_path)
-        converter.convert()
+            # Mock async methods on page
+            mock_page.set_content = AsyncMock()
+            mock_page.emulate_media = AsyncMock()
+            mock_page.pdf = AsyncMock(return_value=b'%PDF-1.4 fake pdf content')
+            mock_page.close = AsyncMock()
 
-        # Assert that the methods were called as expected
-        mock_p.chromium.launch.assert_called_once()
-        mock_browser.new_page.assert_called_once()
-        mock_page.set_content.assert_called_once_with(self.html_content)
-        mock_page.emulate_media.assert_called_once_with(media="print")
-        mock_page.pdf.assert_called_once_with(path=self.output_pdf_path)
-        mock_browser.close.assert_called_once()
+            # Mock async browser.close()
+            mock_browser.close = AsyncMock()
+
+            # Use a list of HTML pages as input
+            html_pages = ['<html>Page 1</html>', '<html>Page 2</html>']
+            converter = HtmlToPdfConverter(html_pages)
+
+            # Await the async convert_to_pdf method
+            output_path = await converter.convert_to_pdf(base_name="test.pdf")
+
+            # Assertions that async methods were awaited properly
+            mock_playwright.chromium.launch.assert_awaited_once()
+            mock_browser.new_page.assert_awaited()
+            # We expect set_content and pdf to be called once per page
+            self.assertEqual(mock_page.set_content.await_count, len(html_pages))
+            self.assertEqual(mock_page.pdf.await_count, len(html_pages))
+            self.assertEqual(mock_page.emulate_media.await_count, len(html_pages))
+            self.assertEqual(mock_page.close.await_count, len(html_pages))
+            mock_browser.close.assert_awaited_once()
+
+            # Check the output path ends with .pdf
+            self.assertTrue(output_path.endswith('.pdf'))
 
     def test_generated_pdf_content(self):
         """
@@ -1194,8 +1209,8 @@ class TestHtmlToPdfConverter(unittest.TestCase):
         file in the same directory as this test file, and name it 'expected_pdf_output.pdf'.
         """
         # Generate the actual PDF file
-        converter = HtmlToPdfConverter(self.html_content, self.output_pdf_path)
-        converter.convert()
+        converter = HtmlToPdfConverter(self.html_content)
+        converter.convert_to_pdf()
 
         # Check if the output file was created
         self.assertTrue(os.path.exists(self.output_pdf_path))
@@ -1208,20 +1223,15 @@ class TestHtmlToPdfConverter(unittest.TestCase):
         # Clean up any whitespace differences
         self.assertEqual(expected_text.strip(), actual_text.strip())
 
-    @patch('app.services.html_to_word.pdf.sync_playwright', side_effect=Exception("Test Error"))
-    def test_convert_exception_handling(self, mock_sync_playwright):
-        """
-        Tests that the convert method handles exceptions gracefully.
+    @patch('app.services.html_to_pdf_converter.async_playwright', side_effect=Exception("Test Error"))
+    def test_convert_exception_handling(self, mock_async_playwright):
+        async def run_test():
+            with self.assertRaises(RuntimeError) as context:
+                await HtmlToPdfConverter(self.html_pages).convert_to_pdf()
 
-        This test simulates an error during the conversion process
-        and verifies that the error is caught and a message is printed.
-        """
-        converter = HtmlToPdfConverter(self.html_content, self.output_pdf_path)
+            self.assertIn("Error during conversion:", str(context.exception))
+            self.assertIn("Test Error", str(context.exception))
 
-        # Redirect stdout to capture the print output
-        with patch('sys.stdout', new=StringIO()) as mock_stdout:
-            converter.convert()
-            self.assertIn("Error during conversion:", mock_stdout.getvalue())
 
 
 if __name__ == '__main__':

@@ -26,12 +26,13 @@ class DocumentConverter:
     pixel-perfect positioning of words and tables.
     """
 
-    def to_html_pages(self, data: Dict[str, Any], options: RenderOptions) -> List[str]:
+    def to_html_pages(self, data: Dict[str, Any], options: RenderOptions) -> List[Dict[str, Any]]:
         """
-        Generates a list of full, standalone HTML strings, one for each page
-        in the document analysis result.
+        Generates a list of dictionaries. Each dictionary contains the full HTML string
+        for a page plus its calculated dimensions. These dimensions are determined
+        internally from the azure_json and are NOT provided by the API caller.
         """
-        html_pages = []
+        pages_data = []
         font_stack = options.font_stack or constants.DEFAULT_FONT_STACK
 
         TARGET_PAGE_WIDTH_PX = 1100  # Adjust as needed
@@ -51,8 +52,6 @@ class DocumentConverter:
                 page_height = page.get("height", constants.DEFAULT_PAGE_HEIGHT)
                 scale = TARGET_PAGE_WIDTH_PX / page_width
 
-            # Compute scale factor
-
             # Create a fast lookup map for words.
             word_map = {
                 word["span"]["offset"]: word
@@ -67,7 +66,7 @@ class DocumentConverter:
             for table in data.get("tables", []):
                 table_html = render_table_with_words(
                     table, page_number, scale, word_map, rendered_spans
-                    ,unit
+                    , unit
                 )
                 if table_html:
                     page_elements_html.append(table_html)
@@ -84,9 +83,12 @@ class DocumentConverter:
             # Step 3: Assemble final HTML
             html_css = constants.HTML_VISUALIZATION_CSS.format(font_style=font_stack)
 
+            page_width_scaled = page_width * scale
+            page_height_scaled = page_height * scale
+
             page_container = constants.CONTAINER_STYLE.format(
-                page_width_scaled=page_width * scale,
-                page_height_scaled=page_height * scale,
+                page_width_scaled=page_width_scaled,
+                page_height_scaled=page_height_scaled,
                 page_angle=page_angle,
                 content="".join(page_elements_html)
             )
@@ -97,6 +99,13 @@ class DocumentConverter:
                 page_container=page_container
             )
 
-            html_pages.append(full_html.replace("\n", " "))
+            # The returned dictionary passes the calculated dimensions along
+            # with the HTML to the next service internally.
+            pages_data.append({
+                "html": full_html.replace("\n", " "),
+                "width": page_width_scaled,
+                "height": page_height_scaled
+            })
 
-        return html_pages
+        return pages_data
+

@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 import io
-from unittest.mock import AsyncMock
+from unittest.mock import patch, AsyncMock
 
 # --- Add project root to Python path ---
 # This allows tests to import modules from the 'app' directory.
@@ -26,27 +26,19 @@ def test_health_check(client: TestClient):
 
 
 # === Tests for the /analyze-document endpoint ===
-def test_analyze_document_success(client: TestClient, valid_api_key: dict, mocker):
-    """
-    Tests successful document analysis by mocking the service layer.
-    This ensures the test is fast and doesn't make a real API call.
-    """
-    # Arrange: Mock the service method to prevent a real network call.
+
+def test_analyze_document_success(client: TestClient, valid_api_key: dict):
     mock_analysis_result = {"pages": [{"pageNumber": 1}], "content": "mocked"}
-    mocker.patch(
-        "app.services.renderer.DocumentRenderer.analyze_document",
-        new_callable=AsyncMock,
-        return_value=mock_analysis_result,
-    )
 
-    # Act: Call the endpoint with a dummy file.
-    response = client.post(
-        "/analyze-document",
-        files={"file": ("test.pdf", constants.TEST_DUMMY_FILE_CONTENT, constants.TEST_PDF_CONTENT_TYPE)},
-        headers=valid_api_key,
-    )
+    with patch("app.services.renderer.DocumentRenderer.analyze_document", new_callable=AsyncMock) as mock_method:
+        mock_method.return_value = mock_analysis_result
 
-    # Assert: Check for a successful response and correct data structure.
+        response = client.post(
+            "/analyze-document",
+            files={"file": ("test.pdf", constants.TEST_DUMMY_FILE_CONTENT, constants.TEST_PDF_CONTENT_TYPE)},
+            headers=valid_api_key,
+        )
+
     assert response.status_code == 200
     json_response = response.json()
     assert json_response["status"] is True

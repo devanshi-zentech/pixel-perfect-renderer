@@ -77,24 +77,17 @@ class DocumentRenderer:
 
     async def render_document(self, analysis_payload, options, file_name: str):
         """Renders JSON to both HTML and PDF, returns paths and HTML."""
-        # Convert JSON to HTML
-        html_pages = self.converter.to_html_pages(analysis_payload, options)
+        # Step 1: Convert JSON to HTML. This internal call also calculates the
+        # exact dimensions needed for each page based on the document's content.
+        pages_data = self.converter.to_html_pages(analysis_payload, options)
 
-        # Convert HTML to PDF and get the PDF path
-        pdf_path = await HtmlToPdfConverter(html_pages).convert_to_pdf(file_name)
+        # Step 2: Convert the HTML pages to a PDF. The pages_data object
+        # contains the pre-calculated dimensions, ensuring a perfect fit.
+        pdf_converter = HtmlToPdfConverter(pages_data)
+        pdf_path = await pdf_converter.convert_to_pdf(file_name)
+
+        # Step 3: Extract just the HTML strings for the final API response.
+        html_pages = [page['html'] for page in pages_data]
+
         return pdf_path, html_pages
-
-    # def render_html(
-    #     self, analysis_payload: Dict[str, Any], options: RenderOptions
-    # ) -> list[str]:
-    #     """Renders the analysis result from JSON to a list of HTML pages."""
-    #     return self.converter.to_html_pages(analysis_payload,options)
-    #
-    # def create_pdf(self, html_pages: list[str], file_name: str):
-    #     """Creates the pdf document from a list of HTML pages."""
-    #     pdf_converter = HtmlToPdfConverter(html_pages)
-    #     return pdf_converter.convert_to_pdf(file_name)
-
-
-
 

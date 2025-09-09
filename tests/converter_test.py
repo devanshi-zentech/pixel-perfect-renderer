@@ -14,19 +14,6 @@ from unittest.mock import MagicMock
 
 from bs4 import BeautifulSoup
 
-# The provided code has relative imports, so we need to add the parent directory to the path.
-# This assumes a directory structure like:
-# /project_root
-#   /app
-#     /core
-#     /services
-#       /document_converter.py
-#       /html_rendering_helpers.py
-#   /tests
-#     /test_document_converter.py
-#
-# This setup allows the test file to import modules from the 'app' directory.
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app', 'services')))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app', 'core')))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app')))
@@ -42,10 +29,6 @@ with patch('document_converter.os.path.dirname', MagicMock(return_value='/app/se
             # Mock the template and its render method to return a controlled string
             mock_template = MagicMock()
             mock_template.render.return_value = "<html><head>{{ html_css }}</head><body>{{ page_container }}</body></html>"
-            with patch('document_converter.env.get_template', MagicMock(return_value=mock_template)):
-                # Now we can import the DocumentConverter
-                from app.services.document_converter import DocumentConverter
-
 
 # Mock `app.models.schemas` which is not provided, and `app.core.constants`
 class MockRenderOptions:
