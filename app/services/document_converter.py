@@ -42,7 +42,6 @@ class DocumentConverter:
 
             # Original page dimensions from JSON
             unit = page.get("unit", "inch")
-            print(unit)
             if unit == "pixel":
                 page_width = page.get("width", constants.DEFAULT_PAGE_WIDTH_PIXEL)
                 page_height = page.get("height", constants.DEFAULT_PAGE_HEIGHT_PIXEL)

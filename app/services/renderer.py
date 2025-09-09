@@ -14,6 +14,7 @@ from fastapi import HTTPException
 from app.core.config import settings
 from app.models.schemas import RenderOptions
 from app.services.document_converter import DocumentConverter
+from app.services.html_to_pdf_converter import HtmlToPdfConverter
 from app.core import constants
 
 
@@ -74,8 +75,26 @@ class DocumentRenderer:
                 detail=constants.STATUS_500_ANALYSIS_ERROR_DETAIL.format(e=str(e)),
             )
 
-    def render_html(
-        self, analysis_payload: Dict[str, Any], options: RenderOptions
-    ) -> list[str]:
-        """Renders the analysis result from JSON to a list of HTML pages."""
-        return self.converter.to_html_pages(analysis_payload,options)
+    async def render_document(self, analysis_payload, options, file_name: str):
+        """Renders JSON to both HTML and PDF, returns paths and HTML."""
+        # Convert JSON to HTML
+        html_pages = self.converter.to_html_pages(analysis_payload, options)
+
+        # Convert HTML to PDF and get the PDF path
+        pdf_path = await HtmlToPdfConverter(html_pages).convert_to_pdf(file_name)
+        return pdf_path, html_pages
+
+    # def render_html(
+    #     self, analysis_payload: Dict[str, Any], options: RenderOptions
+    # ) -> list[str]:
+    #     """Renders the analysis result from JSON to a list of HTML pages."""
+    #     return self.converter.to_html_pages(analysis_payload,options)
+    #
+    # def create_pdf(self, html_pages: list[str], file_name: str):
+    #     """Creates the pdf document from a list of HTML pages."""
+    #     pdf_converter = HtmlToPdfConverter(html_pages)
+    #     return pdf_converter.convert_to_pdf(file_name)
+
+
+
+
