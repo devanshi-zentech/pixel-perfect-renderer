@@ -141,6 +141,13 @@ Use **uvicorn**, the ASGI server that powers FastAPI.
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
+In production, always run without --reload:
+```powershell
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+This avoids the subprocess issue and ensures stable PDF generation and rendering.
+Code changes will not auto-refresh; for updates, manually restart the server.
+
 **Linux / MacOS**
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -240,6 +247,7 @@ curl -X POST "http://localhost:8000/render-json" \
   "status": true,
   "message": "Successfully rendered JSON to HTML.",
   "data": {
+    "file_path":"",
     "page_count": 1,
     "html_pages": ["<!DOCTYPE html><html><head>..."]
   }

@@ -117,17 +117,13 @@ class RendererAPI:
                 }
             }"""
             try:
-                pdf_path, html_pages = await self.service.render_document(payload.azure_json, payload.options,
-                                                                    "rendered_output.pdf")
+                pdf_path, html_pages = await self.service.render_document(payload.azure_json, payload.options)
 
                 render_data = RenderResponse(
                     file_path=pdf_path,
                     page_count=len(html_pages),
                     html_pages=html_pages
                 )
-                print(">>> pdf_path:", pdf_path, type(pdf_path))
-                print(">>> html_pages:", type(html_pages))
-
                 return {
                     "status": True,
                     "message": constants.RENDER_SUCCESS_MSG,

@@ -29,8 +29,7 @@ class DocumentConverter:
     def to_html_pages(self, data: Dict[str, Any], options: RenderOptions) -> List[Dict[str, Any]]:
         """
         Generates a list of dictionaries. Each dictionary contains the full HTML string
-        for a page plus its calculated dimensions. These dimensions are determined
-        internally from the azure_json and are NOT provided by the API caller.
+        for a page + its calculated dimensions.
         """
         pages_data = []
         font_stack = options.font_stack or constants.DEFAULT_FONT_STACK
@@ -82,7 +81,7 @@ class DocumentConverter:
 
             # Step 3: Assemble final HTML
             html_css = constants.HTML_VISUALIZATION_CSS.format(font_style=font_stack)
-
+            
             page_width_scaled = page_width * scale
             page_height_scaled = page_height * scale
 
@@ -100,7 +99,7 @@ class DocumentConverter:
             )
 
             # The returned dictionary passes the calculated dimensions along
-            # with the HTML to the next service internally.
+            # with the HTML to the next service.
             pages_data.append({
                 "html": full_html.replace("\n", " "),
                 "width": page_width_scaled,

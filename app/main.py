@@ -9,6 +9,19 @@ from app.api.endpoints import router as api_router
 from app.utils.exceptions import ExceptionHandlers
 from app.utils.logging import LoggingSetup
 
+from contextlib import asynccontextmanager
+from app.core.browser_manager import start_browser, stop_browser
+
+playwright = None
+browser = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await start_browser()
+    yield
+    await stop_browser()
+
 # --- Initialization ---
 logging_setup = LoggingSetup()
 exception_handlers = ExceptionHandlers()
@@ -16,7 +29,8 @@ exception_handlers = ExceptionHandlers()
 # --- FastAPI App Initialization ---
 app = FastAPI(
     title=settings.project_name,
-    version=settings.project_version
+    version=settings.project_version,
+    lifespan=lifespan
 )
 
 app.middleware("http")(logging_setup.request_id_middleware)

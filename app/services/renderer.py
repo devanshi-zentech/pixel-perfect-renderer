@@ -75,19 +75,17 @@ class DocumentRenderer:
                 detail=constants.STATUS_500_ANALYSIS_ERROR_DETAIL.format(e=str(e)),
             )
 
-    async def render_document(self, analysis_payload, options, file_name: str):
+    async def render_document(self, analysis_payload, options):
         """Renders JSON to both HTML and PDF, returns paths and HTML."""
-        # Step 1: Convert JSON to HTML. This internal call also calculates the
-        # exact dimensions needed for each page based on the document's content.
+        # Step 1: Convert JSON to HTML.
         pages_data = self.converter.to_html_pages(analysis_payload, options)
 
-        # Step 2: Convert the HTML pages to a PDF. The pages_data object
-        # contains the pre-calculated dimensions, ensuring a perfect fit.
+        # Step 2: Convert the HTML pages to a PDF.
         pdf_converter = HtmlToPdfConverter(pages_data)
-        pdf_path = await pdf_converter.convert_to_pdf(file_name)
+        pdf_path = await pdf_converter.convert_to_pdf("doc.pdf")
 
         # Step 3: Extract just the HTML strings for the final API response.
         html_pages = [page['html'] for page in pages_data]
-
+        
         return pdf_path, html_pages
 
