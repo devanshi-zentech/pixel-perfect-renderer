@@ -1,10 +1,7 @@
-import os
 import io
-import uuid
-from datetime import datetime
 from pypdf import PdfReader, PdfWriter
 
-from app.core.browser_manager import get_browser
+from app.core.browser_manager import browser_manager
 from app.core import constants
 
 
@@ -15,26 +12,6 @@ class HtmlToPdfConverter:
         :param pages_data: List of dictionaries, each containing 'html', 'width', and 'height' keys.
         """
         self.pages_data = pages_data
-        self.output_folder = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "../../output")
-        )
-
-    def create_output_path(self, base_name: str) -> str:
-        """
-        Creates the folder structure and returns a unique output file path.
-        
-        :param base_name: Desired base file name (e.g., "document.pdf").
-        :return: Full path to the unique output PDF file.
-        """
-        today_date = datetime.today().strftime('%Y-%m-%d')
-        day_folder_path = os.path.join(self.output_folder, today_date)
-        os.makedirs(day_folder_path, exist_ok=True)
-
-        name, ext = os.path.splitext(base_name)
-        unique_suffix = datetime.now().strftime("%H%M%S") + "_" + uuid.uuid4().hex[:6]
-        unique_name = f"{name}_{unique_suffix}{ext}"
-
-        return os.path.join(day_folder_path, unique_name)
 
     def _is_blank_page(self, pdf_page) -> bool:
         """
@@ -60,16 +37,14 @@ class HtmlToPdfConverter:
 
         return total_size < 20  # very tiny streams usually mean blank page
 
-    async def convert_to_pdf(self, base_name: str = "document.pdf") -> str:
+    async def convert_to_pdf(self) -> str:
         """
         Converts the stored HTML pages into a single merged PDF, skipping blank pages.
-        
-        :param base_name: Base name for the output PDF file.
-        :return: Full path to the generated PDF file.
+        :return: PDF Bytes.
         """
         try:
             pdf_writer = PdfWriter()
-            browser = await get_browser()
+            browser = await browser_manager.get_browser()
 
             for page_data in self.pages_data:
                 page = await browser.new_page()
@@ -88,12 +63,11 @@ class HtmlToPdfConverter:
 
                 await page.close()
 
-            output_pdf_path = self.create_output_path(base_name)
+            output_stream = io.BytesIO()
+            pdf_writer.write(output_stream)
+            output_stream.seek(0)
 
-            with open(output_pdf_path, 'wb') as out_file:
-                pdf_writer.write(out_file)
-
-            return output_pdf_path
+            return output_stream.getvalue()
 
         except Exception as e:
             import traceback

@@ -14,13 +14,14 @@ STATUS_413_PAYLOAD_TOO_LARGE_DETAIL = "File size is too large. The limit is {max
 STATUS_422_VALIDATION_ERROR_DETAIL = "Field required"
 STATUS_500_ANALYSIS_ERROR_DETAIL = "An unexpected error occurred during document analysis: {e}"
 STATUS_500_RENDERING_ERROR_DETAIL = "An unexpected error occurred during rendering: {e}"
+STATUS_500_BLOB_UPLOAD_ERROR_DETAIL = "An unexpected error occurred during Blob upload: {e}"
 
 AZURE_401_AUTH_ERROR_DETAIL = "Azure authentication failed. Check your Document Intelligence API key and endpoint."
 AZURE_GENERAL_ERROR_DETAIL = "An error occurred with the Azure Document Intelligence service: {e}"
-
+AZURE_ANALYZE_MODEL="prebuilt-layout"
 # --- Endpoint Messages ---
 ANALYZE_SUCCESS_MSG = "Document analysis was successful."
-RENDER_SUCCESS_MSG = "Successfully rendered JSON to HTML."
+RENDER_SUCCESS_MSG = "Successfully rendered JSON to PDF."
 
 # --- Logging ---
 LOG_FORMAT = "{time} {level} {extra[request_id]} {message}"
@@ -79,12 +80,16 @@ EMPTY_CELL_STYLE = (
 
 CELL_HTML = '<div style="width:100%; height:100%; overflow:hidden; text-overflow:ellipsis;">{in_flow_text}</div>'
 
+# --- Blob Storage ---
+BLOB_SUFFIX_TIMESTAMP_FORMAT = "%H%M%S"       # time in hhmmss
+BLOB_SUFFIX_UUID_LENGTH = 6                   # short uuid length
+
 # --- CLI Messages ---
 CLI_INIT_MSG = "Initializing document converter in '{mode}' mode..."
 CLI_NO_PAGES_WARNING = "Warning: No pages were rendered. The input JSON might be empty or invalid."
-CLI_SAVE_SUCCESS = "✅ Successfully saved {file_path}"
+CLI_SAVE_SUCCESS = "Successfully saved {file_path}"
 CLI_SAVE_ERROR = "Error: Could not write to file {file_path}: {error}"
-CLI_RENDER_COMPLETE = "\n🎉 Rendering complete. {count} pages saved in '{out_dir}'."
+CLI_RENDER_COMPLETE = "\nRendering complete. {count} pages saved in '{out_dir}'."
 CLI_INPUT_FILE_NOT_FOUND = "Error: Input file not found at '{input_path}'"
 CLI_INPUT_FILE_INVALID = "Error: Could not decode JSON from '{input_path}'. Please check the file format."
 CLI_OUTPUT_DIR_ERROR = "Error: Could not create output directory at '{out_dir}': {error}"

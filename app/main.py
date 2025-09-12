@@ -10,7 +10,7 @@ from app.utils.exceptions import ExceptionHandlers
 from app.utils.logging import LoggingSetup
 
 from contextlib import asynccontextmanager
-from app.core.browser_manager import start_browser, stop_browser
+from app.core.browser_manager import browser_manager
 
 playwright = None
 browser = None
@@ -18,9 +18,9 @@ browser = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await start_browser()
+    await browser_manager.start()
     yield
-    await stop_browser()
+    await browser_manager.stop()
 
 # --- Initialization ---
 logging_setup = LoggingSetup()

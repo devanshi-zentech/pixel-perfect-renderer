@@ -55,12 +55,6 @@ def render_table_with_words(
 ) -> str:
     """
     Renders an HTML table with words positioned inside their cells.
-
-    Key improvements:
-    - Compute each cell's bounding box from its polygon and scale to px.
-    - Make each <td>/<th> `position: relative` so absolute children are localized.
-    - For non-rotated cells, reconstruct in-flow text ordered left-to-right.
-    - Mark table spans as rendered to avoid duplication.
     """
     if not table_data.get("boundingRegions") or table_data["boundingRegions"][0].get("pageNumber") != current_page:
         return ""
@@ -147,10 +141,7 @@ def render_table_with_words(
         cell_poly = []
         if cell_br:
             cell_poly = cell_br[0].get("polygon", [])
-        # if polygon missing, fallback: divide table bbox evenly (best-effort)
         if not cell_poly:
-            # fallback: assume uniform column widths / row heights
-            # compute best-effort width/height in px
             cell_width_in_pixels = (table_width_in_pixels / cols) * col_span
             cell_height_in_pixels = (table_height_in_pixels / rows) * row_span
             cell_left_position = table_left_position + (table_width_in_pixels / scaling_factor) * column_index / cols
