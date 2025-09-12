@@ -1,6 +1,8 @@
 # --- Core Imports ---
 import asyncio
+import os
 from typing import Any, Dict
+from dotenv import load_dotenv
 
 # --- Third-Party Imports ---
 # Azure SDK components for authentication and Document Intelligence client.
@@ -8,11 +10,11 @@ from azure.core.credentials import AzureKeyCredential
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import DocumentAnalysisFeature
 from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
+from azure.storage.blob import BlobClient
 from fastapi import HTTPException
 
 # --- Custom Imports ---
 from app.core.config import settings
-from app.models.schemas import RenderOptions
 from app.services.document_converter import DocumentConverter
 from app.services.html_to_pdf_converter import HtmlToPdfConverter
 from app.core import constants
@@ -76,16 +78,66 @@ class DocumentRenderer:
             )
 
     async def render_document(self, analysis_payload, options):
-        """Renders JSON to both HTML and PDF, returns paths and HTML."""
-        # Step 1: Convert JSON to HTML.
+        """Renders JSON to HTML and uploads PDF to Azure Blob Storage."""
         pages_data = self.converter.to_html_pages(analysis_payload, options)
 
-        # Step 2: Convert the HTML pages to a PDF.
         pdf_converter = HtmlToPdfConverter(pages_data)
-        pdf_path = await pdf_converter.convert_to_pdf("doc.pdf")
+        local_pdf_path = await pdf_converter.convert_to_pdf("doc.pdf")
+        blob_name = os.path.basename(local_pdf_path)
+        blob_url = self.upload_pdf_to_blob(local_pdf_path)
+        print(blob_url)
+        html_pages = [page["html"] for page in pages_data]
+        return blob_url, html_pages
 
-        # Step 3: Extract just the HTML strings for the final API response.
-        html_pages = [page['html'] for page in pages_data]
-        
-        return pdf_path, html_pages
+    def upload_pdf_to_blob(self, file_path: str) -> str:
+        """
+        Uploads a PDF file to Azure Blob Storage using a blob URL with an SAS token.
 
+        This function assumes the BLOB_URL environment variable contains the
+
+        Args:
+            file_path (str): The local path to the PDF file.
+        Returns:
+            str: The full URL of the uploaded blob.
+        """
+        load_dotenv()
+        try:
+            # 1. Retrieve the base URL with SAS token from environment variables.
+            base_url= os.getenv("BLOB_URL")
+
+            if not base_url:
+                raise ValueError("BLOB_URL environment variable is not set.")
+
+            # 2. Get the filename from the provided file path.
+            blob_name = os.path.basename(file_path)
+
+            # 3. Separate the base URL from the SAS token.
+            #    The SAS token starts with a '?'.
+            base_url, sas_token = base_url.split("?", 1)
+
+            # 4. Correctly construct the full URL by appending the blob name
+            #    to the path part of the URL, and then re-adding the SAS token.
+            full_blob_url = f"{base_url}/{blob_name}?{sas_token}"
+            print(full_blob_url)
+
+            # 5. Create a BlobClient object using the correct URL.
+            blob_client = BlobClient.from_blob_url(full_blob_url)
+
+            print(f"Uploading '{blob_name}' to '{full_blob_url}'...")
+
+            with open(file_path, "rb") as data:
+                blob_client.upload_blob(data, overwrite=True)
+
+            print("Upload successful.")
+
+            return full_blob_url
+
+        except FileNotFoundError:
+            raise FileNotFoundError(f"The file at '{file_path}' was not found.")
+        except ValueError as ve:
+            # This will catch errors if the BLOB_URL is not in the expected format (missing '?').
+            raise ValueError(
+                f"BLOB_URL format is incorrect: {ve}. It should be a container URL with a SAS token appended.")
+        except Exception as e:
+            # This will now be a more specific error related to the SAS token or URL
+            raise RuntimeError(f"An error occurred during blob upload: {e}")

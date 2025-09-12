@@ -117,10 +117,10 @@ class RendererAPI:
                 }
             }"""
             try:
-                pdf_path, html_pages = await self.service.render_document(payload.azure_json, payload.options)
+                blob_url, html_pages = await self.service.render_document(payload.azure_json, payload.options)
 
                 render_data = RenderResponse(
-                    file_path=pdf_path,
+                    file_path=blob_url,
                     page_count=len(html_pages),
                     html_pages=html_pages
                 )
