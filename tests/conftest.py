@@ -1,16 +1,31 @@
-import sys
-from pathlib import Path
-
-# Add the project root to the Python path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from typing import Generator
 import pytest
+from typing import Generator
 from fastapi.testclient import TestClient
 from app.main import app
 from app.core.config import settings
+from app.core.browser_manager import browser_manager
 
-# This fixture will be used by all tests to make requests to the API
+@pytest.fixture(scope="function")
+async def fresh_browser():
+    """Each test starts with a fresh Playwright browser instance."""
+    browser_manager.browser = None
+    yield
+    if browser_manager.browser:
+        await browser_manager.stop()
+    browser_manager.browser = None
+
+
+@pytest.fixture(scope="module")
+async def browser_per_module():
+    """Launch one Playwright browser for all tests in a module."""
+    browser_manager.browser = None
+    browser = await browser_manager.get_browser()
+    yield browser
+    if browser_manager.browser:
+        await browser_manager.stop()
+    browser_manager.browser = None
+
+
 @pytest.fixture(scope="module")
 def client() -> Generator[TestClient, None, None]:
     """

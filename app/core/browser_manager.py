@@ -32,10 +32,17 @@ class BrowserManager:
     async def stop(self):
         """Stop browser and Playwright instance."""
         if self.browser:
-            await self.browser.close()
+            try:
+                await self.browser.close()
+            except Exception as e:
+                print(f"Warning: browser already closed or invalid → {e}")
             self.browser = None
+
         if self.playwright:
-            await self.playwright.stop()
+            try:
+                await self.playwright.stop()
+            except Exception as e:
+                print(f"Warning: playwright already stopped → {e}")
             self.playwright = None
 
     async def get_browser(self):

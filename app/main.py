@@ -1,6 +1,7 @@
 # --- Core Imports ---
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException, RequestValidationError
+from slowapi.errors import RateLimitExceeded
 from fastapi.middleware.cors import CORSMiddleware
 
 # --- Custom Imports ---
@@ -37,6 +38,7 @@ app.middleware("http")(logging_setup.request_id_middleware)
 # --- Exception Handlers ---
 app.add_exception_handler(HTTPException, exception_handlers.http_exception_handler)
 app.add_exception_handler(RequestValidationError, exception_handlers.validation_exception_handler)
+app.add_exception_handler(RateLimitExceeded, exception_handlers.rate_limit_exception_handler)
 
 # --- CORS Middleware ---
 app.add_middleware(

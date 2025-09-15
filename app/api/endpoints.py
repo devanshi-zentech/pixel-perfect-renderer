@@ -46,9 +46,7 @@ class RendererAPI:
         @self.router.get("/",include_in_schema=False)
         async def get_root():
             return RedirectResponse(url="/health")
-        @self.router.get("/", include_in_schema=False)
-        async def root():
-            return RedirectResponse(url="/health")
+        
         @self.router.post(
             "/analyze-document",
             response_model=APIResponse[AzureJson],
