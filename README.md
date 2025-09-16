@@ -229,7 +229,7 @@ curl -X POST "http://localhost:8000/analyze-document" \
 ### `/render-json`
 
 - **Method:** POST
-- **Description:** Renders the layout JSON into HTML.
+- **Description:** Renders the layout JSON into HTML and PDF.
 - **Headers:**  `X-API-Key: Your secret API key.`
 - **Body:** Raw JSON payload.
 
@@ -282,9 +282,6 @@ curl -X POST "http://localhost:8000/render-json" \
 This project includes a **pytest test suite** that runs without making
 live calls to Azure.
 
-**Note:** The pytest tests are based on the **previous version** of the project and are **yet to be updated** for the latest changes.  
-They may not fully cover or validate the new functionality until updated.
-
 Run tests with:
 
 ```bash
@@ -296,21 +293,18 @@ pytest -v
 ## 8. Command-Line Interface (CLI) Helper
 
 For local testing and batch processing, a command-line helper script `render_doc.py` is provided.  
-It allows you to render an Azure JSON file directly to HTML without running the web server.
-
-**Note:** This CLI script is from a **previous version** and is **yet to be updated**.  
-It may not work, or may not work as expected, in the current release.
+It allows you to render an Azure JSON file directly to HTML and PDF without running the web server.
 
 **Usage:**  
 The script takes an input JSON file and an output directory as arguments.
 
 **Windows**
 ```powershell
-python -m app.services.render_doc --input "<path-to-json>" --out output_html_files --mode words --dpi 96 --font "Arial, sans-serif"
+python -m app.services.render_doc --input "<path-to-json>" --out output_files --mode words --dpi 96 --font "Arial, sans-serif"
 
 **Linux / MacOS**
 ```bash
-python -m app.services.render_doc --input "<path-to-json>" --out output_html_files --mode words --dpi 96 --font "Arial, sans-serif"
+python -m app.services.render_doc --input "<path-to-json>" --out output_files --mode words --dpi 96 --font "Arial, sans-serif"
 ```
 
-This command will read the specified JSON file and save the rendered HTML pages (e.g., page_1.html, page_2.html) inside the `./output_html_files` directory.
+This command will read the specified JSON file and save the rendered HTML pages (e.g., page_1.html, page_2.html) and a single combined PDF inside the `./output_files` directory.
