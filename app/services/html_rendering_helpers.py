@@ -35,12 +35,14 @@ def render_word(word_data: Dict[str, Any], scaling_factor: float, measurement_un
 
     sanitized_content = str(word_data.get("content", "")).replace("<", "&lt;").replace(">", "&gt;")
 
-    # Use constants.RENDER_WORD_STYLE; pass pixel values
     style = constants.RENDER_WORD_STYLE.format(
         left=left, top=top, word_height=word_height_in_pixels, font_size=font_size_in_pixels, angle_deg=angle_deg
     )
+    extra_attrs = ""
+    if abs(abs(angle_deg) - 90) < 15:
+        extra_attrs = ' data-orientation="vertical"'
 
-    return f'<span class="word" style="{style}">{sanitized_content}</span>'
+    return f'<span{extra_attrs} style="{style}">{sanitized_content}</span>'
 
 
 def render_table_with_words(
@@ -53,12 +55,6 @@ def render_table_with_words(
 ) -> str:
     """
     Renders an HTML table with words positioned inside their cells.
-
-    Key improvements:
-    - Compute each cell's bounding box from its polygon and scale to px.
-    - Make each <td>/<th> `position: relative` so absolute children are localized.
-    - For non-rotated cells, reconstruct in-flow text ordered left-to-right.
-    - Mark table spans as rendered to avoid duplication.
     """
     if not table_data.get("boundingRegions") or table_data["boundingRegions"][0].get("pageNumber") != current_page:
         return ""
@@ -145,10 +141,7 @@ def render_table_with_words(
         cell_poly = []
         if cell_br:
             cell_poly = cell_br[0].get("polygon", [])
-        # if polygon missing, fallback: divide table bbox evenly (best-effort)
         if not cell_poly:
-            # fallback: assume uniform column widths / row heights
-            # compute best-effort width/height in px
             cell_width_in_pixels = (table_width_in_pixels / cols) * col_span
             cell_height_in_pixels = (table_height_in_pixels / rows) * row_span
             cell_left_position = table_left_position + (table_width_in_pixels / scaling_factor) * column_index / cols
@@ -190,7 +183,8 @@ def render_table_with_words(
                     font_size_in_pixels=font_size_in_pixels,
                     word_height_in_pixels=word_height_in_pixels,
                 )
-                inner_html_parts.append(f'<span style="{word_style}">{sanitized}</span>')
+                extra_attrs = ' data-orientation="vertical"'
+                inner_html_parts.append(f'<span{extra_attrs} style="{word_style}">{sanitized}</span>')
 
             inner_html = "".join(inner_html_parts)
             # ensure the cell has the computed width/height and position:relative

@@ -217,3 +217,7 @@ __marimo__/
 /.vscode/tasks.json
 
 *.html
+*.pdf
+*.doc
+*.docx
+experiment.py

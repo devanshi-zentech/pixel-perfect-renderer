@@ -15,5 +15,8 @@ class Settings(BaseSettings):
     doc_intelligence_endpoint: str
     doc_intelligence_key: str
 
+    blob_url: str
+    azure_storage_container_name: str
+
 
 settings = Settings()

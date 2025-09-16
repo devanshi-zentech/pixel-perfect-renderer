@@ -10,6 +10,7 @@ from fastapi import (
 )
 from fastapi.responses import RedirectResponse
 from fastapi.security.api_key import APIKeyHeader
+from starlette.responses import RedirectResponse
 
 from app.core.config import settings
 from app.core import constants
@@ -42,10 +43,10 @@ class RendererAPI:
 
     def _add_routes(self):
         """Attach all endpoints to router"""
-
-        @self.router.get("/", include_in_schema=False)
-        async def root():
+        @self.router.get("/",include_in_schema=False)
+        async def get_root():
             return RedirectResponse(url="/health")
+        
         @self.router.post(
             "/analyze-document",
             response_model=APIResponse[AzureJson],
@@ -89,9 +90,8 @@ class RendererAPI:
             summary="Step 2: Render JSON to HTML",
             description=(
                 """
-                Takes the `azure_json` object from the 'Analyze Document' endpoint, along with rendering options and
-                converts it into styled HTML pages.
-                This allows for a two-step workflow where analysis and rendering are separate operations."""
+                    Takes Azure JSON and renders both HTML pages and a downloadable PDF file.
+                    """
             )
         )
         @limiter.limit(settings.rate_limit)
@@ -115,8 +115,13 @@ class RendererAPI:
                 }
             }"""
             try:
-                html_pages = self.service.render_html(payload.azure_json, payload.options)
-                render_data = RenderResponse(page_count=len(html_pages), html_pages=html_pages)
+                blob_url, html_pages = await self.service.render_document(payload.azure_json, payload.options)
+
+                render_data = RenderResponse(
+                    file_path=blob_url,
+                    page_count=len(html_pages),
+                    html_pages=html_pages
+                )
                 return {
                     "status": True,
                     "message": constants.RENDER_SUCCESS_MSG,

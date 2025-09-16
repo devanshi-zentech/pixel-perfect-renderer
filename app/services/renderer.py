@@ -1,6 +1,9 @@
 # --- Core Imports ---
 import asyncio
 from typing import Any, Dict
+import uuid
+from datetime import datetime
+import uuid
 
 # --- Third-Party Imports ---
 # Azure SDK components for authentication and Document Intelligence client.
@@ -8,12 +11,13 @@ from azure.core.credentials import AzureKeyCredential
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import DocumentAnalysisFeature
 from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
+from azure.storage.blob import BlobClient
 from fastapi import HTTPException
 
 # --- Custom Imports ---
 from app.core.config import settings
-from app.models.schemas import RenderOptions
 from app.services.document_converter import DocumentConverter
+from app.services.html_to_pdf_converter import HtmlToPdfConverter
 from app.core import constants
 
 
@@ -47,7 +51,7 @@ class DocumentRenderer:
             poller = await loop.run_in_executor(
                 None,
                 lambda: self.doc_intelligence_client.begin_analyze_document(
-                    "prebuilt-layout",
+                    constants.AZURE_ANALYZE_MODEL,
                     file_content,
                     features=[DocumentAnalysisFeature.KEY_VALUE_PAIRS],
                 ),
@@ -74,8 +78,43 @@ class DocumentRenderer:
                 detail=constants.STATUS_500_ANALYSIS_ERROR_DETAIL.format(e=str(e)),
             )
 
-    def render_html(
-        self, analysis_payload: Dict[str, Any], options: RenderOptions
-    ) -> list[str]:
-        """Renders the analysis result from JSON to a list of HTML pages."""
-        return self.converter.to_html_pages(analysis_payload,options)
+    async def render_document(self, analysis_payload, options):
+        """Renders JSON to HTML and uploads PDF to Azure Blob Storage."""
+        pages_data = self.converter.to_html_pages(analysis_payload, options)
+
+        pdf_converter = HtmlToPdfConverter(pages_data)
+        pdf_bytes = await pdf_converter.convert_to_pdf()
+
+        # Generate unique suffix with timestamp + short uuid
+        unique_suffix = datetime.now().strftime(constants.BLOB_SUFFIX_TIMESTAMP_FORMAT) + "_" + uuid.uuid4().hex[:constants.BLOB_SUFFIX_UUID_LENGTH]
+        blob_name = f"doc_{unique_suffix}.pdf"
+
+        blob_url = self.upload_pdf_bytes_to_blob(blob_name, pdf_bytes)
+
+        html_pages = [page["html"] for page in pages_data]
+        return blob_url, html_pages
+
+
+    def upload_pdf_bytes_to_blob(self, blob_name: str, pdf_bytes: bytes) -> str:
+        """
+        Uploads PDF bytes directly to Azure Blob Storage.
+        """
+        try:
+            base_url = settings.blob_url
+
+            base_url, sas_token = base_url.split("?", 1)
+            full_blob_url = f"{base_url}/{blob_name}?{sas_token}"
+
+            blob_client = BlobClient.from_blob_url(full_blob_url)
+
+            blob_client.upload_blob(pdf_bytes, overwrite=True)
+            return full_blob_url
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=constants.STATUS_500_BLOB_UPLOAD_ERROR_DETAIL.format(e=str(e)),
+            )
+        

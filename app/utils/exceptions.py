@@ -1,7 +1,7 @@
 from fastapi import Request, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from app.core import constants
+from slowapi.errors import RateLimitExceeded
 
 class ExceptionHandlers:
     async def http_exception_handler(self, request: Request, exc: HTTPException):
@@ -19,5 +19,15 @@ class ExceptionHandlers:
                 "status": False,
                 "message": first_error_msg,
                 "data": errors,
+            },
+        )
+    
+    async def rate_limit_exception_handler(self, request: Request, exc: RateLimitExceeded):
+        return JSONResponse(
+            status_code=429,
+            content={
+                "status": False,
+                "message": f"Rate limit exceeded: {exc.detail}",
+                "data": None
             },
         )

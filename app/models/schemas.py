@@ -7,9 +7,9 @@ DataType = TypeVar("DataType")
 # ----- Models for /render-json output -----
 class RenderResponse(BaseModel):
     """Response model for the /render-json endpoint."""
-    page_count: int
-    html_pages: List[str]
-
+    file_path: Optional[str] = None
+    page_count: Optional[int] = None
+    html_pages: Optional[List[str]] = None
 
 # ----- Models for rendering options -----
 class RenderOptions(BaseModel):
