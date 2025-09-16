@@ -95,9 +95,17 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4.  **Configure Environment Variables:**    Create a file named `.env` in the project root directory and
-    populate it with your credentials. Use the `.env.example` file as a
-    template:
+4.  **Install Playwright Browsers**:     Playwright requires browser binaries to be downloaded. This is a crucial one-time setup step.
+
+```bash
+playwright install
+```
+
+5.  **Configure Environment Variables:**    You can either download the pre-configured project.env file from the link below, rename it to .env, and place it in the project root directory:
+
+Download project.env : https://utslanguagetranslator.blob.core.windows.net/sensitive-details/project.env?sp=racwdl&st=2025-09-15T12:34:02Z&se=2026-09-15T20:49:02Z&spr=https&sv=2024-11-04&sr=c&sig=8B0E3KHH25ldW%2B0V71%2BZenzgns3JFKiq75FIPns6WkI%3D
+
+or create a new .env file manually in the project root directory and populate it with your credentials:
 
 ```ini
 # .env
