@@ -32,7 +32,7 @@ DEFAULT_RENDER_MODE = "words"
 DEFAULT_DPI = 96
 HTML_VISUALIZATION_CSS = """
 body {{ font-family: {font_style}; background: #f0f0f0; }}
-.page {{ margin: 20px auto; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; overflow: hidden; background: white; }}
+.page {{ margin: 0 auto; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; overflow: hidden; background: white; }}
 .table-container table {{ border-collapse: collapse; width: 100%; }}
 .table-container th, .table-container td {{ border: 1px solid black; padding: 4px; text-align: center; font-size: 10px; position: relative; overflow: hidden; }}
 """
