@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
     await browser_manager.stop()
 
 # --- Initialization ---
-logging_setup = LoggingSetup()
+logging_setup = LoggingSetup(settings.log_path)
 exception_handlers = ExceptionHandlers()
 
 # --- FastAPI App Initialization ---

@@ -1,3 +1,4 @@
+import asyncio
 from playwright.async_api import async_playwright
 
 class BrowserManager:
@@ -17,9 +18,13 @@ class BrowserManager:
 
         self.playwright = await async_playwright().start()
         try:
+            # Add flags useful for containers environments:
+            #  - --no-sandbox: required when running as non-root or in restricted environments
+            #  - --disable-dev-shm-usage: avoids /dev/shm size issues in containers
+            #  - --disable-gpu: recommended for headless
             self.browser = await self.playwright.chromium.launch(
                 headless=True,
-                args=["--disable-gpu", "--no-sandbox"],  # helps on Windows
+                args=["--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage"],
                 timeout=30000  # 30 seconds max
             )
         except Exception as e:
@@ -49,6 +54,28 @@ class BrowserManager:
         """Ensure browser is started and return it."""
         if self.browser is None:
             await self.start()
+        try:
+            is_connected_fn = getattr(self.browser, "is_connected", None)
+            if is_connected_fn:
+                result = is_connected_fn()
+                if asyncio.iscoroutine(result):
+                    is_connected = await result
+                else:
+                    is_connected = bool(result)
+            else:
+                # If no is_connected, assume browser is valid
+                is_connected = True
+        except Exception:
+            is_connected = False
+
+        if not is_connected:
+            # Attempt to restart browser once
+            try:
+                await self.stop()
+            except Exception:
+                pass
+            await self.start()
+
         return self.browser
 
 
