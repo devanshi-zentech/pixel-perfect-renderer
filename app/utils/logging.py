@@ -25,9 +25,6 @@ class LoggingSetup:
         # Configure Loguru sinks
         logger.remove()
 
-        # Ensure patcher is set before adding sinks so formatters always have
-        # the expected extra fields (request_id, ip). This prevents
-        # KeyError during early log emissions.
         self._patch_logger()
 
         logger.add(
@@ -35,14 +32,10 @@ class LoggingSetup:
             format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {extra[request_id]} | {extra[ip]} | {message}",
             level="INFO",
         )
-
-
-        candidate = log_file or os.environ.get("LOG_PATH")
-        if not candidate:
-            candidate = os.path.join(tempfile.gettempdir(), "app.log")
+        candidate = os.path.join(os.getcwd(), "app.log")
 
         try:
-            # Ensure parent directory exists for user-specified paths
+            # Ensure parent directory exists for user-specified paths.
             parent = os.path.dirname(candidate) or "."
             if parent and not os.path.exists(parent):
                 os.makedirs(parent, exist_ok=True)
@@ -51,8 +44,6 @@ class LoggingSetup:
             with open(candidate, "a"):
                 pass
 
-            # Use enqueue=True on EC2 so logging writes are handled by a
-            # background thread/process, improving performance.
             logger.add(
                 candidate,
                 rotation="10 MB",
