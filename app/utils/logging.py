@@ -1,7 +1,5 @@
 import logging
 import sys
-import os
-import tempfile
 import uuid
 from loguru import logger
 from fastapi import Request, Response
@@ -18,44 +16,32 @@ class InterceptHandler(logging.Handler):
 
 
 class LoggingSetup:
-    def __init__(self, log_file: str | None = None):
+    def __init__(self, log_file: str = "app.log"):
         # Redirect std logging → loguru
         logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
 
         # Configure Loguru sinks
         logger.remove()
-
-        self._patch_logger()
-
+        # Console sink
         logger.add(
             sys.stdout,
             format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {extra[request_id]} | {extra[ip]} | {message}",
             level="INFO",
         )
-        candidate = os.path.join(os.getcwd(), "app.log")
 
-        try:
-            # Ensure parent directory exists for user-specified paths.
-            parent = os.path.dirname(candidate) or "."
-            if parent and not os.path.exists(parent):
-                os.makedirs(parent, exist_ok=True)
+        # File sink
+        logger.add(
+            log_file,
+            rotation="10 MB",      # Rotate when file grows too large
+            retention="7 days",    # Keep logs for 7 days
+            compression="zip",     # Compress old logs
+            format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {extra[request_id]} | {extra[ip]} | {message}",
+            level="INFO",
+            enqueue=True,          # Thread/process safe
+        )
 
-            # Attempt to open the file for append to ensure it's writable.
-            with open(candidate, "a"):
-                pass
-
-            logger.add(
-                candidate,
-                rotation="10 MB",
-                retention="7 days",
-                compression="zip",
-                format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {extra[request_id]} | {extra[ip]} | {message}",
-                level="INFO",
-                enqueue=True,
-            )
-        except Exception:
-            # If file path is not writable, skip file sink and rely on stdout.
-            logger.warning(f"Log file {candidate} not writable; writing logs to stdout only.")
+        # Ensure all logs (even background ones) have request_id and ip
+        self._patch_logger()
 
     def _patch_logger(self):
         """
