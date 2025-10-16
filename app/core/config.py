@@ -10,8 +10,8 @@ class Settings(BaseSettings):
     api_key: str
     rate_limit: str
     log_path: str
-    cors_origins: list[str] = ["https://api.tranwise.com/AddOCRFile",
-                               "https://stage.api.tranwise.com/AddOCRFile", "*"]  # CRM's Origin
+    cors_origins: list[str] = ["https://api.tranwise.com",
+                               "https://stage.api.tranwise.com", "*"]  # CRM's Origin
     max_request_size: int
     doc_intelligence_endpoint: str
     doc_intelligence_key: str
