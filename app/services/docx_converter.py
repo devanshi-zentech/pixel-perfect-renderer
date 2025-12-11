@@ -504,6 +504,10 @@ class DocxConverter:
         
         shape_id = 1
         for page_idx, page in enumerate(pages):
+            # Add page break before each page except the first one
+            if page_idx > 0:
+                doc.add_page_break()
+            
             page_paragraph = doc.add_paragraph()
             page_paragraph.paragraph_format.space_before = Pt(0)
             page_paragraph.paragraph_format.space_after = Pt(0)
