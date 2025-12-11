@@ -19,6 +19,9 @@ from app.core.config import settings
 from app.services.document_converter import DocumentConverter
 from app.services.html_to_pdf_converter import HtmlToPdfConverter
 from app.core import constants
+from app.services.azure_json_to_docx import azure_json_to_docx
+from app.services.docx_converter import DocxConverter
+import os
 
 
 class DocumentRenderer:
@@ -30,6 +33,7 @@ class DocumentRenderer:
     def __init__(self):
         """Initializes the Azure Document Intelligence client and the HTML converter."""
         self.converter = DocumentConverter()
+        self.docx_converter = DocxConverter()
         self.doc_intelligence_client = DocumentIntelligenceClient(
             endpoint=settings.doc_intelligence_endpoint,
             credential=AzureKeyCredential(settings.doc_intelligence_key),
@@ -82,18 +86,74 @@ class DocumentRenderer:
         """Renders JSON to HTML and uploads PDF to Azure Blob Storage."""
         pages_data = self.converter.to_html_pages(analysis_payload, options)
 
-        pdf_converter = HtmlToPdfConverter(pages_data)
-        pdf_bytes = await pdf_converter.convert_to_pdf()
+        # Convert Azure JSON to DOCX bytes and save locally for now
+        docx_bytes = azure_json_to_docx(analysis_payload)
 
         # Generate unique suffix with timestamp + short uuid
         unique_suffix = datetime.now().strftime(constants.BLOB_SUFFIX_TIMESTAMP_FORMAT) + "_" + uuid.uuid4().hex[:constants.BLOB_SUFFIX_UUID_LENGTH]
-        blob_name = f"doc_{unique_suffix}.pdf"
+        file_name = f"doc_{unique_suffix}.docx"
 
-        blob_url = self.upload_pdf_bytes_to_blob(blob_name, pdf_bytes)
+        output_dir = os.path.join(os.getcwd(), "output_files")
+        os.makedirs(output_dir, exist_ok=True)
+        local_path = os.path.join(output_dir, file_name)
+        with open(local_path, "wb") as f:
+            f.write(docx_bytes)
 
         html_pages = [page["html"] for page in pages_data]
-        return blob_url, html_pages
+        return local_path, html_pages
 
+    async def analyze_and_render_docx(self, file_content: bytes) -> str:
+        """
+        Complete workflow: Analyze document with Azure Document Intelligence
+        and render to DOCX with pixel-perfect positioning.
+        
+        Args:
+            file_content: Document bytes (PDF, PNG, JPG, etc.)
+        
+        Returns:
+            str: Azure Blob Storage URL of the uploaded DOCX file
+        """
+        # Step 1: Analyze document with Azure Document Intelligence
+        print("Step 1: Analyzing document with Azure Document Intelligence...")
+        analysis_result = await self.analyze_document(file_content)
+        
+        # Step 2: Convert Azure JSON to DOCX bytes
+        print("Step 2: Converting JSON to DOCX with pixel-perfect rendering...")
+        docx_bytes = self.docx_converter.convert_to_docx_bytes(analysis_result)
+        
+        # Step 3: Generate unique blob name
+        unique_suffix = datetime.now().strftime(constants.BLOB_SUFFIX_TIMESTAMP_FORMAT) + "_" + uuid.uuid4().hex[:constants.BLOB_SUFFIX_UUID_LENGTH]
+        blob_name = f"doc_{unique_suffix}.docx"
+        
+        # Step 4: Upload to Azure Blob Storage
+        print(f"Step 3: Uploading DOCX to Azure Blob Storage as {blob_name}...")
+        blob_url = self.upload_docx_bytes_to_blob(blob_name, docx_bytes)
+        
+        print(f"✓ Complete! DOCX available at: {blob_url}")
+        return blob_url
+
+    def upload_docx_bytes_to_blob(self, blob_name: str, docx_bytes: bytes) -> str:
+        """
+        Uploads DOCX bytes directly to Azure Blob Storage.
+        """
+        try:
+            base_url = settings.blob_url
+
+            base_url, sas_token = base_url.split("?", 1)
+            full_blob_url = f"{base_url}/{blob_name}?{sas_token}"
+
+            blob_client = BlobClient.from_blob_url(full_blob_url)
+
+            blob_client.upload_blob(docx_bytes, overwrite=True)
+            return full_blob_url
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=constants.STATUS_500_BLOB_UPLOAD_ERROR_DETAIL.format(e=str(e)),
+            )
 
     def upload_pdf_bytes_to_blob(self, blob_name: str, pdf_bytes: bytes) -> str:
         """
