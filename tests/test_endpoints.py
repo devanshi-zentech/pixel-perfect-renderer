@@ -104,3 +104,89 @@ class TestEndpoints:
             response = client.post("/analyze-document", files={"file": file}, headers=valid_api_key)
             assert response.status_code == 429
             assert "rate limit exceeded" in response.text.lower()
+
+    # === Tests for the /analyze-and-render-docx endpoint ===
+    def test_analyze_and_render_docx_success(self, client: TestClient, valid_api_key: dict):
+        """Tests successful DOCX generation from document analysis."""
+        mock_blob_url = "https://storage.azure.com/container/doc_20251212_abc123.docx?sas_token"
+
+        with patch("app.services.renderer.DocumentRenderer.analyze_and_render_docx", new_callable=AsyncMock) as mock_method:
+            mock_method.return_value = mock_blob_url
+
+            response = client.post(
+                "/analyze-and-render-docx",
+                files={"file": ("test.pdf", constants.TEST_DUMMY_FILE_CONTENT, constants.TEST_PDF_CONTENT_TYPE)},
+                headers=valid_api_key,
+            )
+
+        assert response.status_code == 200
+        json_response = response.json()
+        assert json_response["status"] is True
+        assert json_response["message"] == constants.DOCX_RENDER_SUCCESS_MSG
+        assert "data" in json_response
+        assert "download_url" in json_response["data"]
+        assert "file_name" in json_response["data"]
+        assert json_response["data"]["download_url"] == mock_blob_url
+        assert json_response["data"]["file_name"] == "doc_20251212_abc123.docx"
+        assert "DOCX file generated successfully" in json_response["data"]["message"]
+
+    def test_analyze_and_render_docx_invalid_key(self, client: TestClient, invalid_api_key: dict):
+        """Tests that the endpoint fails with 403 Forbidden for invalid API key."""
+        file = ("test.pdf", constants.TEST_DUMMY_FILE_CONTENT, constants.TEST_PDF_CONTENT_TYPE)
+        response = client.post("/analyze-and-render-docx", files={"file": file}, headers=invalid_api_key)
+        assert response.status_code == 403
+        assert response.json()["message"] == constants.STATUS_403_FORBIDDEN_DETAIL
+
+    def test_analyze_and_render_docx_empty_file(self, client: TestClient, valid_api_key: dict):
+        """Tests that the endpoint rejects empty files."""
+        file = ("test.pdf", b"", constants.TEST_PDF_CONTENT_TYPE)
+        response = client.post("/analyze-and-render-docx", files={"file": file}, headers=valid_api_key)
+        assert response.status_code == 400
+        assert constants.STATUS_400_EMPTY_FILE in response.json()["message"]
+
+    def test_analyze_and_render_docx_no_file(self, client: TestClient, valid_api_key: dict):
+        """Tests that the endpoint returns 422 when no file is provided."""
+        response = client.post("/analyze-and-render-docx", headers=valid_api_key)
+        assert response.status_code == 422
+
+    def test_analyze_and_render_docx_analysis_failure(self, client: TestClient, valid_api_key: dict):
+        """Tests error handling when Azure Document Intelligence analysis fails."""
+        with patch("app.services.renderer.DocumentRenderer.analyze_and_render_docx", new_callable=AsyncMock) as mock_method:
+            mock_method.side_effect = Exception("Azure service unavailable")
+
+            response = client.post(
+                "/analyze-and-render-docx",
+                files={"file": ("test.pdf", constants.TEST_DUMMY_FILE_CONTENT, constants.TEST_PDF_CONTENT_TYPE)},
+                headers=valid_api_key,
+            )
+
+        assert response.status_code == 500
+        response_json = response.json()
+        # Check if error is in 'detail' (HTTPException format) or 'message' (custom format)
+        error_msg = response_json.get("detail") or response_json.get("message", "")
+        assert "Azure service unavailable" in error_msg or "DOCX rendering" in error_msg
+
+    def test_analyze_and_render_docx_supported_formats(self, client: TestClient, valid_api_key: dict):
+        """Tests that the endpoint accepts various supported file formats."""
+        mock_blob_url = "https://storage.azure.com/container/doc_test.docx?sas_token"
+        
+        supported_formats = [
+            ("test.pdf", constants.TEST_PDF_CONTENT_TYPE),
+            ("test.png", "image/png"),
+            ("test.jpg", "image/jpeg"),
+            ("test.jpeg", "image/jpeg"),
+        ]
+
+        with patch("app.services.renderer.DocumentRenderer.analyze_and_render_docx", new_callable=AsyncMock) as mock_method:
+            mock_method.return_value = mock_blob_url
+
+            for filename, content_type in supported_formats:
+                response = client.post(
+                    "/analyze-and-render-docx",
+                    files={"file": (filename, constants.TEST_DUMMY_FILE_CONTENT, content_type)},
+                    headers=valid_api_key,
+                )
+                
+                assert response.status_code == 200, f"Failed for {filename}"
+                json_response = response.json()
+                assert json_response["status"] is True
