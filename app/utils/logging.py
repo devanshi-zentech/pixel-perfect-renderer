@@ -4,7 +4,6 @@ import uuid
 from loguru import logger
 from fastapi import Request, Response
 
-
 class InterceptHandler(logging.Handler):
     """Redirects standard logging records to Loguru."""
 
@@ -23,7 +22,6 @@ class LoggingSetup:
 
         # Configure Loguru sinks
         logger.remove()
-
         # Console sink
         logger.add(
             sys.stdout,

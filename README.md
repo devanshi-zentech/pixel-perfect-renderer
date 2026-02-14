@@ -274,7 +274,45 @@ curl -X POST "http://localhost:8000/render-json" \
   - html_pages is an array of raw HTML strings wrapped inside JSON.
     When consuming this response, you must call JSON.parse (or equivalent) to correctly deserialize the array.
     Some clients may show escaped characters like `\/` until parsed. After parsing, you’ll get clean HTML you can directly render or save to a file.
+### `/analyze-and-render-docx`
 
+- **Method:** POST
+- **Description:** Complete workflow endpoint that analyzes a document and converts it to a pixel-perfect DOCX file. This endpoint combines document analysis with DOCX generation in a single API call.
+- **Headers:**  `X-API-Key: Your secret API key.`
+- **Body:** `multipart/form-data` with field:
+  - `file`: Document to analyze and convert (PDF, JPEG, PNG, JPG, etc).
+
+**Workflow:** 
+1. Accepts a document file (PDF, PNG, JPG, etc.)
+2. Analyzes it with Azure Document Intelligence
+3. Converts the JSON to a pixel-perfect DOCX file with proper text rotation and positioning
+4. Uploads the DOCX to Azure Blob Storage
+5. Returns the download URL
+
+**Curl Example:**
+```bash
+curl -X POST "http://localhost:8000/analyze-and-render-docx" \
+     -H "X-API-Key: your-secret-api-key" \
+     -F "file=@/path/to/your/document.pdf"
+```
+
+**Response (200 OK):**
+```json
+{
+  "status": true,
+  "message": "DOCX file generated successfully with pixel-perfect rendering.",
+  "data": {
+    "download_url": "https://<your-azure-blob-container>/rendered/abcd1234.docx",
+    "file_name": "abcd1234.docx",
+    "message": "DOCX file generated successfully with pixel-perfect rendering"
+  }
+}
+```
+
+**Important Note:**
+  - This is a convenience endpoint that combines the analysis and DOCX conversion steps into one API call.
+  - The generated DOCX file preserves the original document's layout, including text rotation and precise positioning.
+  - The download_url provides direct access to the DOCX file stored in Azure Blob Storage.
 ---
 
 ## 7. Testing

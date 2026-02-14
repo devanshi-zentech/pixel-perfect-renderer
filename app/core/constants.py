@@ -14,6 +14,7 @@ STATUS_413_PAYLOAD_TOO_LARGE_DETAIL = "File size is too large. The limit is {max
 STATUS_422_VALIDATION_ERROR_DETAIL = "Field required"
 STATUS_500_ANALYSIS_ERROR_DETAIL = "An unexpected error occurred during document analysis: {e}"
 STATUS_500_RENDERING_ERROR_DETAIL = "An unexpected error occurred during rendering: {e}"
+STATUS_500_DOCX_RENDERING_ERROR_DETAIL = "An unexpected error occurred during DOCX rendering: {e}"
 STATUS_500_BLOB_UPLOAD_ERROR_DETAIL = "An unexpected error occurred during Blob upload: {e}"
 
 AZURE_401_AUTH_ERROR_DETAIL = "Azure authentication failed. Check your Document Intelligence API key and endpoint."
@@ -22,6 +23,7 @@ AZURE_ANALYZE_MODEL="prebuilt-layout"
 # --- Endpoint Messages ---
 ANALYZE_SUCCESS_MSG = "Document analysis was successful."
 RENDER_SUCCESS_MSG = "Successfully rendered JSON to PDF."
+DOCX_RENDER_SUCCESS_MSG = "Successfully analyzed document and generated DOCX file."
 
 # --- Logging ---
 LOG_FORMAT = "{time} {level} {extra[request_id]} {message}"
@@ -32,7 +34,7 @@ DEFAULT_RENDER_MODE = "words"
 DEFAULT_DPI = 96
 HTML_VISUALIZATION_CSS = """
 body {{ font-family: {font_style}; background: #f0f0f0; }}
-.page {{ margin: 20px auto; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; overflow: hidden; background: white; }}
+.page {{ margin: 0 auto; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; overflow: hidden; background: white; }}
 .table-container table {{ border-collapse: collapse; width: 100%; }}
 .table-container th, .table-container td {{ border: 1px solid black; padding: 4px; text-align: center; font-size: 10px; position: relative; overflow: hidden; }}
 """

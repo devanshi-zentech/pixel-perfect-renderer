@@ -11,6 +11,13 @@ class RenderResponse(BaseModel):
     page_count: Optional[int] = None
     html_pages: Optional[List[str]] = None
 
+# ----- Models for /analyze-and-render-docx output -----
+class DocxRenderResponse(BaseModel):
+    """Response model for the /analyze-and-render-docx endpoint."""
+    download_url: str = Field(..., description="Azure Blob Storage URL for the generated DOCX file")
+    file_name: str = Field(..., description="Name of the generated DOCX file")
+    message: str = Field(..., description="Success message")
+
 # ----- Models for rendering options -----
 class RenderOptions(BaseModel):
     """Rendering configuration options for HTML output."""

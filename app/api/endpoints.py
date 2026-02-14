@@ -20,6 +20,7 @@ from app.models.schemas import (
     AzureJson,
     RenderRequest,
     RenderResponse,
+    DocxRenderResponse,
 )
 from app.services.renderer import DocumentRenderer
 from app.utils.file_validator import FileValidator
@@ -133,6 +134,61 @@ class RendererAPI:
                 raise HTTPException(
                     status_code=500,
                     detail=constants.STATUS_500_RENDERING_ERROR_DETAIL.format(e=str(e)),
+                )
+
+        @self.router.post(
+            "/analyze-and-render-docx",
+            response_model=APIResponse[DocxRenderResponse],
+            summary="Analyze Document and Generate DOCX",
+            description=(
+                """
+                Complete workflow endpoint that:
+                1. Accepts a document file (PDF, PNG, JPG, etc.)
+                2. Analyzes it with Azure Document Intelligence
+                3. Converts the JSON to a pixel-perfect DOCX file with proper text rotation and positioning
+                4. Uploads the DOCX to Azure Blob Storage
+                5. Returns the download URL
+                """
+            )
+        )
+        @limiter.limit(settings.rate_limit)
+        async def analyze_and_render_docx_endpoint(
+            request: Request,
+            file: UploadFile = File(..., description="The document file to be analyzed and converted to DOCX."),
+            api_key: str = Depends(self.get_api_key),
+        ):
+            """
+            SAMPLE INPUT:
+            Upload a file (PDF, PNG, JPG, JPEG) as 'file' form-data.
+            
+            RESPONSE:
+            Returns a download URL for the generated DOCX file with pixel-perfect rendering.
+            """
+            try:
+                # Validate the uploaded file
+                file_content = await self.file_validator.validate_upload(file)
+                
+                # Process: Analyze → Convert to DOCX → Upload to Blob
+                blob_url = await self.service.analyze_and_render_docx(file_content)
+                
+                # Extract blob name from URL
+                blob_name = blob_url.split('/')[-1].split('?')[0]
+                
+                return {
+                    "status": True,
+                    "message": constants.DOCX_RENDER_SUCCESS_MSG,
+                    "data": DocxRenderResponse(
+                        download_url=blob_url,
+                        file_name=blob_name,
+                        message="DOCX file generated successfully with pixel-perfect rendering"
+                    ),
+                }
+            except HTTPException:
+                raise
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=constants.STATUS_500_DOCX_RENDERING_ERROR_DETAIL.format(e=str(e)),
                 )
 
         @self.router.get(
